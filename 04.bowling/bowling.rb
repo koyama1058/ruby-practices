@@ -21,14 +21,12 @@ shots.each_slice(2) do |shot|
 end
 
 frames.each.with_index do |frame, i|
-  if frame[0] == 10
-    if frames[i + 1][0] != 10
-      sum += frames[i + 1][0]
-      sum += frames[i + 1][1]
-    else
-      sum += frames[i + 1][0]
-      sum += frames[i + 2][0]
-    end
+  if frame[0] == 10 && frames[i + 1][0] == 10
+    sum += frames[i + 1][0]
+    sum += frames[i + 2][0]
+  elsif frame[0] == 10 && frames[i + 1][0] != 10
+    sum += frames[i + 1][0]
+    sum += frames[i + 1][1]
   elsif frame.sum == 10
     sum += frames[i + 1][0]
   end
