@@ -90,7 +90,7 @@ if option.include?('l')
       m.to_i.to_s(2)
     end
     permission = mode.map do |mo|
-      permission_pattern = {'111' => 'rwx', '110' => 'rw-', '101' => 'r-x', '100' => 'r--', '011' => '-wx', '010' => '-w-', '001' => '--x', '000' => '---' }
+      permission_pattern = { '111' => 'rwx', '110' => 'rw-', '101' => 'r-x', '100' => 'r--', '011' => '-wx', '010' => '-w-', '001' => '--x', '000' => '---' }
       permission_pattern[mo]
     end
     file['file_type&permission'] = permission.join('').insert(0, file_type)
