@@ -1,3 +1,4 @@
+#!/usr/bin/env ruby
 require 'etc'
 
 # 受け取った引数を一つ一つに分割して配列にいれる
