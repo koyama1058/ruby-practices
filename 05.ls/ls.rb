@@ -112,7 +112,7 @@ if option.include?('l')
     file['byte_size'] = file_byte_size
 
     # 全てのファイルのタイムスタンプを取得
-    times = File.stat(items[t]).mtime.to_s.scan(/(-[01]\d-[01]\d) ([01]\d|2[0-3])(:[0-5]\d)/).flatten
+    times = File.stat(items[t]).mtime.to_s.scan(/(-[01]\d-[0-3]\d) ([01]\d|2[0-3])(:[0-5]\d)/).flatten
     file['time_stamp'] = times.join(' ').tr('-', ' ').gsub(/^ 0/, ' ').gsub(/ :/, ':')
 
     # 全てのファイルのファイル名を取得
