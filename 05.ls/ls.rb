@@ -1,19 +1,18 @@
-require 'pry'
 require 'etc'
 
 # 受け取った引数を一つ一つに分割して配列にいれる
-if ARGV[0] != nil
-  option = ARGV[0].chars
-else
-  option = []
-end
+option = if !ARGV[0].nil?
+           ARGV[0].chars
+         else
+           []
+         end
 
 # aオプションを指定した場合の配列
-all_items = Dir.children('.').sort.unshift('.', '..') 
-if option.include?("a")
+all_items = Dir.children('.').sort.unshift('.', '..')
+if option.include?('a')
   items = all_items
 # aオプションを使用しなかった場合の配列
-else  
+else
   except_dot_items = []
   all_items.each do |item|
     except_dot_items << item if /^[^.]+/.match?(item)
@@ -22,34 +21,14 @@ else
 end
 
 # rオプションを使用した場合に配列を逆順に
-items.reverse! if option.include?("r")
+items.reverse! if option.include?('r')
 
-unless option.include?("l")
-  # ファイルで一番長いものの文字数を取得
-  max_words = items.max_by(&:length).length
-  items.map do |item|
-    item.concat(' ' * (max_words - item.length))
-  end
-  # 縦横を入れ替えるためにnilを追加
-  allow_size = items.size / 3 + 1
-  add_nil = allow_size * 3 - items.size
-  add_nil.times do
-    items << nil
-  end
-  # 縦横を入れ替える
-  results = items.each_slice(allow_size).to_a.transpose
-
-  # 一応並べられた
-  results.each do |row|
-    puts row.join('  ')
-  end
-
-else
-  all_items = Dir.children('.').sort.unshift('.', '..') 
-  if option.include?("a")
+if option.include?('l')
+  all_items = Dir.children('.').sort.unshift('.', '..')
+  if option.include?('a')
     items = all_items
   # aオプションを使用しなかった場合の配列
-  else  
+  else
     except_dot_items = []
     all_items.each do |item|
       except_dot_items << item if /^[^.]+/.match?(item)
@@ -91,62 +70,44 @@ else
   end
   byte_size_length = byte_sizes.max_by(&:length).length
 
+  items.reverse! if option.include?('r')
+
   items.size.times do |t|
-    file = { 'file_type&permission' => nil, 'hard_link' => nil, 'owner_name' => nil, 'group_name' => nil, 'byte_size' => nil, 'time_stamp' => nil,
-            'file_name' => nil }
+    file = {}
 
     # 全てのファイルタイプを取得
-    if File.ftype(items[t]) == 'directory'
+    case File.ftype(items[t])
+    when 'directory'
       file_type = 'd'
-    elsif File.ftype(items[t]) == 'file'
+    when 'file'
       file_type = '-'
     end
 
     # 全てのファイルのパーミッションを取得
-    mode = '0%o' % File.stat(items[t]).mode
+    mode = File.stat(items[t]).mode.to_s(8)
     mode = mode[-3, 3].chars.map do |m|
       m.to_i.to_s(2)
     end
-    m = mode.map do |m|
-      case m
-      when '111'
-        m = 'rwx'
-      when '110'
-        m = 'rw-'
-      when '101'
-        m = 'r-x'
-      when '100'
-        m = 'r--'
-      when '011'
-        m = '-wx'
-      when '010'
-        m = '-w-'
-      when '001'
-        m - '--x'
-      when '000'
-        m = '---'
-      end
+    permission = mode.map do |mo|
+      permission_pattern = {'111' => 'rwx', '110' => 'rw-', '101' => 'r-x', '100' => 'r--', '011' => '-wx', '010' => '-w-', '001' => '--x', '000' => '---' }
+      permission_pattern[mo]
     end
-    file['file_type&permission'] = m.join('').insert(0, file_type)
+    file['file_type&permission'] = permission.join('').insert(0, file_type)
 
     # 全てのファイルのハードリンクの数を取得
-    file_hard_link = File.stat(items[t]).nlink.to_s
-    file_hard_link = file_hard_link.insert(0, ' ' * (hard_link_length - file_hard_link.length))
+    file_hard_link = File.stat(items[t]).nlink.to_s.insert(0, ' ' * (hard_link_length - File.stat(items[t]).nlink.to_s.length))
     file['hard_link'] = file_hard_link
 
     # 全てのファイルのオーナー名を取得
-    file_owner_name = Etc.getpwuid(File.stat(items[t]).uid).name
-    file_owner_name = file_owner_name.insert(0, ' ' * (owner_name_length - file_owner_name.length))
+    file_owner_name = Etc.getpwuid(File.stat(items[t]).uid).name.insert(0, ' ' * (owner_name_length - Etc.getpwuid(File.stat(items[t]).uid).name.length))
     file['owner_name'] = file_owner_name
 
     # 全てのファイルのグループ名を取得
-    file_group_name = Etc.getgrgid(File.stat(items[t]).gid).name
-    file_group_name = file_group_name.insert(0, ' ' * (group_name_length - file_group_name.length))
+    file_group_name = Etc.getgrgid(File.stat(items[t]).gid).name.insert(0, ' ' * (group_name_length - Etc.getgrgid(File.stat(items[t]).gid).name.length))
     file['group_name'] = file_group_name
 
     # 全てのファイルのバイトサイズを取得
-    file_byte_size = File.stat(items[t]).size.to_s
-    file_byte_size = file_byte_size.insert(0, ' ' * (byte_size_length - file_byte_size.length))
+    file_byte_size = File.stat(items[t]).size.to_s.insert(0, ' ' * (byte_size_length - File.stat(items[t]).size.to_s.length))
     file['byte_size'] = file_byte_size
 
     # 全てのファイルのタイムスタンプを取得
@@ -158,4 +119,24 @@ else
 
     puts file.values.join(' ')
   end
+else
+  # ファイルで一番長いものの文字数を取得
+  max_words = items.max_by(&:length).length
+  items.map do |item|
+    item.concat(' ' * (max_words - item.length))
+  end
+  # 縦横を入れ替えるためにnilを追加
+  allow_size = items.size / 3 + 1
+  add_nil = allow_size * 3 - items.size
+  add_nil.times do
+    items << nil
+  end
+  # 縦横を入れ替える
+  results = items.each_slice(allow_size).to_a.transpose
+
+  # 一応並べられた
+  results.each do |row|
+    puts row.join('  ')
+  end
+
 end
