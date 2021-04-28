@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 require 'etc'
 
+PERMISSION_PATTERN = { '111' => 'rwx', '110' => 'rw-', '101' => 'r-x', '100' => 'r--', '011' => '-wx', '010' => '-w-', '001' => '--x', '000' => '---' }.freeze
+
 # 受け取った引数を一つ一つに分割して配列にいれる
 option = if !ARGV[0].nil?
            ARGV[0].chars
@@ -44,10 +46,7 @@ if option.include?('l')
   puts "total #{file_blocks.sum}"
 
   # ハードリンクの長さを測定
-  hard_links = []
-  items.each do |item|
-    hard_links << File.stat(item).nlink.to_s
-  end
+  hard_links = items.map { |item| File.stat(item).nlink.to_s }
   hard_link_length = hard_links.max_by(&:length).length
 
   # オーナーネームの長さを測定
@@ -89,31 +88,25 @@ if option.include?('l')
     mode = mode[-3, 3].chars.map do |m|
       m.to_i.to_s(2)
     end
-    permission = mode.map do |mo|
-      permission_pattern = { '111' => 'rwx', '110' => 'rw-', '101' => 'r-x', '100' => 'r--', '011' => '-wx', '010' => '-w-', '001' => '--x', '000' => '---' }
-      permission_pattern[mo]
-    end
-    file['file_type&permission'] = permission.join('').insert(0, file_type)
+
+    permissions = mode.map { |mo| PERMISSION_PATTERN[mo] }
+    file['file_type&permission'] = file_type + permissions.join('')
 
     # 全てのファイルのハードリンクの数を取得
-    file_hard_link = File.stat(items[t]).nlink.to_s.insert(0, ' ' * (hard_link_length - File.stat(items[t]).nlink.to_s.length))
-    file['hard_link'] = file_hard_link
+    file['hard_link'] = File.stat(items[t]).nlink.to_s.rjust(hard_link_length)
 
     # 全てのファイルのオーナー名を取得
-    file_owner_name = Etc.getpwuid(File.stat(items[t]).uid).name.insert(0, ' ' * (owner_name_length - Etc.getpwuid(File.stat(items[t]).uid).name.length))
-    file['owner_name'] = file_owner_name
+    file['owner_name'] = Etc.getpwuid(File.stat(items[t]).uid).name.rjust(owner_name_length)
 
     # 全てのファイルのグループ名を取得
-    file_group_name = Etc.getgrgid(File.stat(items[t]).gid).name.insert(0, ' ' * (group_name_length - Etc.getgrgid(File.stat(items[t]).gid).name.length))
-    file['group_name'] = file_group_name
+    file['group_name'] = Etc.getgrgid(File.stat(items[t]).gid).name.rjust(group_name_length)
 
     # 全てのファイルのバイトサイズを取得
-    file_byte_size = File.stat(items[t]).size.to_s.insert(0, ' ' * (byte_size_length - File.stat(items[t]).size.to_s.length))
-    file['byte_size'] = file_byte_size
+    file['byte_size'] = File.stat(items[t]).size.to_s.rjust(byte_size_length)
 
     # 全てのファイルのタイムスタンプを取得
-    times = File.stat(items[t]).mtime.to_s.scan(/(-[01]\d-[0-3]\d) ([01]\d|2[0-3])(:[0-5]\d)/).flatten
-    file['time_stamp'] = times.join(' ').tr('-', ' ').gsub(/^ 0/, ' ').gsub(/ :/, ':')
+    time = File.stat(items[t]).mtime
+    file['time_stamp'] = " #{time.month} #{time.day} #{format('%02d', time.hour)}:#{format('%02d', time.min)}"
 
     # 全てのファイルのファイル名を取得
     file['file_name'] = items[t]
@@ -122,18 +115,21 @@ if option.include?('l')
   end
 else
   # ファイルで一番長いものの文字数を取得
-  max_words = items.max_by(&:length).length
-  items.map do |item|
-    item.concat(' ' * (max_words - item.length))
-  end
+  max_words = items.map(&:length).max.to_i
+  arranged_items = items.map { |item| item.ljust(max_words) }
   # 縦横を入れ替えるためにnilを追加
-  allow_size = items.size / 3 + 1
-  add_nil = allow_size * 3 - items.size
-  add_nil.times do
-    items << nil
+  case items.size % 3
+  when 1
+    arranged_items << nil
+    arranged_items << nil
+  when 2
+    arranged_items << nil
   end
+  # p arranged_items
+  allow_size = arranged_items.size / 3
+
   # 縦横を入れ替える
-  results = items.each_slice(allow_size).to_a.transpose
+  results = arranged_items.each_slice(allow_size).to_a.transpose
 
   # 一応並べられた
   results.each do |row|
