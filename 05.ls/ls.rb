@@ -16,11 +16,8 @@ if option.include?('a')
   items = all_items
 # aオプションを使用しなかった場合の配列
 else
-  except_dot_items = []
-  all_items.each do |item|
-    except_dot_items << item if /^[^.]+/.match?(item)
-  end
-  items = except_dot_items
+  except_dot_items = all_items.map { |item| item if /^[^.]+/.match?(item) }
+  items = except_dot_items.compact
 end
 
 # rオプションを使用した場合に配列を逆順に
@@ -32,17 +29,12 @@ if option.include?('l')
     items = all_items
   # aオプションを使用しなかった場合の配列
   else
-    except_dot_items = []
-    all_items.each do |item|
-      except_dot_items << item if /^[^.]+/.match?(item)
-    end
-    items = except_dot_items
+    except_dot_items = all_items.map { |item| item if /^[^.]+/.match?(item) }
+    items = except_dot_items.compact
   end
 
-  file_blocks = []
-  items.each do |item|
-    file_blocks << File.stat(item).blocks
-  end
+  file_blocks = items.map { |item| File.stat(item).blocks }
+
   puts "total #{file_blocks.sum}"
 
   # ハードリンクの長さを測定
@@ -50,24 +42,15 @@ if option.include?('l')
   hard_link_length = hard_links.max_by(&:length).length
 
   # オーナーネームの長さを測定
-  owner_names = []
-  items.each do |item|
-    owner_names << Etc.getpwuid(File.stat(item).uid).name
-  end
+  owner_names = items.map { |item| Etc.getpwuid(File.stat(item).uid).name }
   owner_name_length = owner_names.max_by(&:length).length
 
   # group_nameの長さを取得
-  group_names = []
-  items.each do |item|
-    group_names << Etc.getgrgid(File.stat(item).gid).name
-  end
+  group_names = items.map { |item| Etc.getgrgid(File.stat(item).gid).name }
   group_name_length = group_names.max_by(&:length).length
 
   # byte_sizeの長さを取得
-  byte_sizes = []
-  items.each do |item|
-    byte_sizes << File.stat(item).size.to_s
-  end
+  byte_sizes = items.map { |item| File.stat(item).size.to_s }
   byte_size_length = byte_sizes.max_by(&:length).length
 
   items.reverse! if option.include?('r')
@@ -120,12 +103,12 @@ else
   # 縦横を入れ替えるためにnilを追加
   case items.size % 3
   when 1
-    arranged_items << nil
-    arranged_items << nil
+    2.times do
+      arranged_items << nil
+    end
   when 2
     arranged_items << nil
   end
-  # p arranged_items
   allow_size = arranged_items.size / 3
 
   # 縦横を入れ替える
