@@ -101,14 +101,15 @@ else
   max_words = items.map(&:length).max.to_i
   arranged_items = items.map { |item| item.ljust(max_words) }
   # 縦横を入れ替えるためにnilを追加
-  case items.size % 3
-  when 1
-    2.times do
-      arranged_items << nil
-    end
-  when 2
-    arranged_items << nil
-  end
+  arranged_items << nil while (arranged_items.size % 3) != 0
+  # case items.size % 3
+  # when 1
+  #   2.times do
+  #     arranged_items << nil
+  #   end
+  # when 2
+  #   arranged_items << nil
+  # end
   allow_size = arranged_items.size / 3
 
   # 縦横を入れ替える
