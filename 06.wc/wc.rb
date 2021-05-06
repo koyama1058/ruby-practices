@@ -1,63 +1,94 @@
-argument = ARGV
+#!/usr/bin/env ruby
 
-if argument.include?('-l')
+# 引数ファイルの行数を取得
+def file_lines(file) 
+  file.lines.count.to_s.rjust(8)
+end
+
+# 引数ファイルの単語数を取得
+def file_words(file)
+  file.split(/\s+/).size.to_s.rjust(8)
+end
+
+# 引数ファイルのバイトサイズを取得
+def file_size(file)
+  file.size.to_s.rjust(8)
+end
+
+# 標準入力のファイル行数を取得
+def input_lines(input)
+  input.chomp.split("\n").count.to_s.rjust(8)
+end
+
+# 標準入力の単語数を取得
+def input_words(input)
+  input.chomp.split(/\s+/).size.to_s.rjust(8)
+end
+
+# 標準入力のバイトサイズを取得
+def input_sizes(input)
+  input.size.to_s.rjust(8)
+end
+
+file_names = ARGV
+
+if file_names.include?('-l')
   option = 'l'
-  argument.delete('-l')
+  file_names.delete('-l')
 end
 
-files_info = []
-word_width = 8
-
-# 選択したファイルを本来は配列に入れてループ処理させる
-argument.size.times do |t|
-  select_item = argument[t]
-
-  file = File.read(select_item)
-
-  file_info = { 'file_lines' => nil, 'file_words' => nil, 'file_size' => nil, 'file_name' => nil }
-
-  # 行数を取得
-  file_info['file_lines'] = file.lines.count.to_s.insert(0, ' ' * (word_width - file.lines.count.to_s.length))
-
-  # 単語数を取得
-  file_info['file_words'] = file.split(/\s+/).size.to_s.insert(0, ' ' * (word_width - file.split(/\s+/).size.to_s.length))
-
-  # バイト数を取得
-  file_info['file_size'] =  File.stat(select_item).size.to_s.insert(0, ' ' * (word_width - File.stat(select_item).size.to_s.length))
-
-  # ファイル名を取得
-  file_info['file_name'] = select_item
-
-  if option
-    print "#{file_info['file_lines']} "
-    puts file_info['file_name']
-  else
-    puts file_info.values.join(' ')
-  end
-  files_info << file_info
+# 標準入力の条件分岐
+if file_names.empty? && option
+  # lオプションがついた場合
+  input = $stdin.read
+  puts input_lines(input)
+  # lオプションがつかない場合
+elsif file_names.empty?
+  input = $stdin.read
+  puts "#{input_lines(input)}#{input_words(input)}#{input_sizes(input)}"
 end
 
-if argument.length >= 2
-  files_lines = []
-  files_words = []
-  files_size = []
 
-  files_info.each do |t|
-    files_lines << t['file_lines'].to_i
-    files_words << t['file_words'].to_i
-    files_size << t['file_size'].to_i
+# ファイルが一つの場合の条件分岐
+if file_names.count == 1 && option   
+  # lオプションがついた場合
+  file = File.read(file_names[0])
+  print file_lines(file)
+  puts " #{file_names[0]}"
+elsif file_names.count == 1
+  # lオプションがつかない場合
+  file = File.read(file_names[0])
+  print file_lines(file)
+  print file_words(file)
+  print file_size(file)
+  puts " #{file_names[0]}"
+end
+
+# ファイルが複数の場合の条件分岐
+if file_names.count > 1 && option
+  # lオプションがついた場合
+  lines_sum = 0
+  file_names.each do |f|
+    file = File.read(f)
+    print file_lines(file)
+    puts " #{f}"
+    lines_sum += file_lines(file).to_i
   end
-  total_file_info = { 'file_lines' => nil, 'file_words' => nil, 'file_size' => nil, 'file_name' => nil }
-
-  total_file_info['file_lines'] = files_lines.sum.to_s.insert(0, ' ' * (word_width - files_lines.sum.to_s.length))
-  total_file_info['file_words'] = files_words.sum.to_s.insert(0, ' ' * (word_width - files_words.sum.to_s.length))
-  total_file_info['file_size'] = files_size.sum.to_s.insert(0, ' ' * (word_width - files_size.sum.to_s.length))
-  total_file_info['file_name'] = 'total'
-  if option
-    print "#{total_file_info['file_lines']} "
-    puts 'total'
-  else
-    puts total_file_info.values.join(' ')
+  puts "#{lines_sum.to_s.rjust(8)} total" 
+elsif file_names.count > 1
+  # lオプションがつかない場合
+  lines_sum = 0
+  words_sum = 0
+  sizes_sum = 0
+  file_names.each do |f|
+    file = File.read(f)
+    print file_lines(file)
+    print file_words(file)
+    print file_size(file)
+    puts " #{f}"
+    lines_sum += file_lines(file).to_i
+    words_sum += file_words(file).to_i
+    sizes_sum += file_size(file).to_i
   end
-
+  puts "#{lines_sum.to_s.rjust(8)}#{words_sum.to_s.rjust(8)}#{sizes_sum.to_s.rjust(8)} total" 
 end
