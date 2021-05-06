@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # 引数ファイルの行数を取得
-def file_lines(file) 
+def file_lines(file)
   file.lines.count.to_s.rjust(8)
 end
 
@@ -48,9 +48,8 @@ elsif file_names.empty?
   puts "#{input_lines(input)}#{input_words(input)}#{input_sizes(input)}"
 end
 
-
 # ファイルが一つの場合の条件分岐
-if file_names.count == 1 && option   
+if file_names.count == 1 && option
   # lオプションがついた場合
   file = File.read(file_names[0])
   print file_lines(file)
@@ -74,7 +73,7 @@ if file_names.count > 1 && option
     puts " #{f}"
     lines_sum += file_lines(file).to_i
   end
-  puts "#{lines_sum.to_s.rjust(8)} total" 
+  puts "#{lines_sum.to_s.rjust(8)} total"
 elsif file_names.count > 1
   # lオプションがつかない場合
   lines_sum = 0
@@ -90,5 +89,5 @@ elsif file_names.count > 1
     words_sum += file_words(file).to_i
     sizes_sum += file_size(file).to_i
   end
-  puts "#{lines_sum.to_s.rjust(8)}#{words_sum.to_s.rjust(8)}#{sizes_sum.to_s.rjust(8)} total" 
+  puts "#{lines_sum.to_s.rjust(8)}#{words_sum.to_s.rjust(8)}#{sizes_sum.to_s.rjust(8)} total"
 end
