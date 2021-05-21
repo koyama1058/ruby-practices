@@ -110,10 +110,6 @@ else
   # when 2
   #   arranged_items << nil
   # end
-  allow_size = arranged_items.size / 3
-
-  # 縦横を入れ替える
-  results = arranged_items.each_slice(allow_size).to_a.transpose
 
   # 一応並べられた
   results.each do |row|
