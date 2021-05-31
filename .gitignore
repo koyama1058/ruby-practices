@@ -13,6 +13,11 @@
 /test/tmp/
 /test/version_tmp/
 /tmp/
+/07.bowling_object/bowling.rb
+/07.bowling_object/game.rb
+/07.bowling_object/test.rb
+/07.bowling_object/first.rb
+sample.rb
 
 # Used by dotenv library to load environment variables.
 # .env

@@ -1,61 +1,93 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
-class Game
-  def initialize(frames)
-    @frames = frames
-    @sum = frames.flatten.sum
+class Shot
+  attr_reader :shot
+
+  def initialize(shot)
+    @shot = shot
   end
 
-  def added_point
-    @frames.each.with_index do |frame, i|
-      if frame[0] == 10 && @frames[i + 1][0] == 10
-        @sum += @frames[i + 1][0]
-        @sum += @frames[i + 2][0]
-      elsif frame[0] == 10 && @frames[i + 1][0] != 10
-        @sum += @frames[i + 1][0]
-        @sum += @frames[i + 1][1]
-      elsif frame.sum == 10
-        @sum += @frames[i + 1][0]
-      end
-
-      break if i == 8
-    end
-    @sum
+  def score
+    @shot == 'X' ? 10 : @shot.to_i
   end
 end
 
 class Frame
-  def initialize(shots)
-    @shots = shots
-    @frames = []
+  attr_reader :first_shot, :second_shot, :third_shot
+
+  def initialize(first_shot, second_shot = nil, third_shot = nil)
+    @first_shot = Shot.new(first_shot).score
+    @second_shot = Shot.new(second_shot).score
+    @third_shot = Shot.new(third_shot).score
   end
 
-  def make_frame
-    @shots.each_slice(2) do |shot|
-      @frames << shot
-    end
-    @frames
+  def frame_score
+    frame_point = @first_shot
+    frame_point += @second_shot if @second_shot
+    frame_point += @third_shot if @third_shot
+    frame_point
+  end
+
+  def strike?
+    @first_shot == 10
+  end
+
+  def spare?
+    !strike? && @first_shot + @second_shot == 10
   end
 end
 
-class Shot
-  def initialize(element)
-    @scores = element.split(',')
-    @shots = []
+class Game
+  attr_reader :input, :frames
+
+  def initialize(input)
+    @input = input
   end
 
-  def make_shot
-    @scores.each do |s|
-      if s == 'X'
-        @shots << 10 && @shots << 0
+  def split_frame
+    shots = @input.split(',')
+    @frames = []
+    while frames.size < 9
+      shot = shots.shift
+      if shot == 'X'
+        frames << Frame.new(shot)
       else
-        @shots << s.to_i
+        next_shot = shots.shift
+        frames << Frame.new(shot, next_shot)
       end
     end
-    @shots
+    frames << Frame.new(*shots)
+    frames
+  end
+
+  def basic_score
+    basic_score = 0
+    split_frame.each do |frame|
+      basic_score += frame.frame_score
+    end
+    basic_score
+  end
+
+  def bonus_score
+    bonus_score = 0
+    split_frame.each.with_index do |frame, i|
+      # ストライクの際のボーナス
+      if frame.strike? && frames[i + 1].first_shot == 10 && i != 8
+        bonus_score += (frames[i + 1].first_shot + frames[i + 2].first_shot)
+      elsif frame.strike? && frames[i + 1].first_shot == 10 && i == 8
+        bonus_score += (frames[i + 1].first_shot + frames[i + 1].second_shot)
+      elsif frame.strike? && frames[i + 1].first_shot != 10
+        bonus_score += (frames[i + 1].first_shot + frames[i + 1].second_shot)
+      # スペアの際のボーナス
+      elsif frame.spare?
+        bonus_score += frames[i + 1].first_shot
+      end
+      break bonus_score if i == 8
+    end
+  end
+
+  def total_score
+    basic_score + bonus_score
   end
 end
-
-shots = Shot.new(ARGV[0]).make_shot
-frames = Frame.new(shots).make_frame
-p Game.new(frames).added_point
